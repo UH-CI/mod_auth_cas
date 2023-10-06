@@ -1777,6 +1777,7 @@ apr_byte_t isValidCASCookie(request_rec *r, cas_cfg *c, char *cookie, char **use
 
 	/* set the user */
 	*user = apr_pstrndup(r->pool, cache.user, strlen(cache.user));
+  correct_username(*user);
 	*attrs = cas_saml_attr_pdup(r->pool, cache.attrs);
 
 	cache.lastactive = apr_time_now();
@@ -2215,7 +2216,6 @@ int cas_authenticate(request_rec *r)
 	// prevent infinite redirect loops by allowing subsequent authentication responses to pass through, leaving the ticket parameter intact
 	if(c->CASPreserveTicket && (ticket != NULL) && (cookieString != NULL) && ap_is_initial_req(r) && isValidCASCookie(r, c, cookieString, &remoteUser, &attrs) && (remoteUser != NULL)) {
 		cas_set_attributes(r, attrs);
-    correct_username(remoteUser);
 		r->user = remoteUser;
 		set_http_headers(r, c, d, attrs);
 		if (c->CASDebug)
@@ -2253,7 +2253,6 @@ int cas_authenticate(request_rec *r)
 				return HTTP_INTERNAL_SERVER_ERROR;
 
 			cookieString = createCASCookie(r, remoteUser, attrs, ticket);
-      correct_username(remoteUser);
 
 			/* if there was an error writing the cookie info to the file system */
 			if(cookieString == NULL)
@@ -2333,7 +2332,6 @@ int cas_authenticate(request_rec *r)
 		cas_set_attributes(r, attrs);
 
 		if(remoteUser) {
-      correct_username(remoteUser);      
 			r->user = remoteUser;
 			set_http_headers(r, c, d, attrs);
 			return OK;
