@@ -1777,7 +1777,20 @@ apr_byte_t isValidCASCookie(request_rec *r, cas_cfg *c, char *cookie, char **use
 
 	/* set the user */
 	*user = apr_pstrndup(r->pool, cache.user, strlen(cache.user));
-  correct_username(*user);
+  // DLS code to lower case the inbound user name as linux is case sensitive
+        {  char *p = *user;
+          while (*p) {
+            *p = tolower((char)*p);
+            p++;
+          }
+        }
+        {
+          char *ix = *user;
+          while((ix = strchr(ix, '@')) != NULL) {
+            *ix = '_';
+            ix++;
+          }
+        }
 	*attrs = cas_saml_attr_pdup(r->pool, cache.attrs);
 
 	cache.lastactive = apr_time_now();
@@ -2155,21 +2168,6 @@ static void set_http_headers(request_rec *r, cas_cfg *c, cas_dir_cfg *d, cas_sam
 	}
 }
 
-
-// DLS code to lower case the inbound user name as linux is case sensitive
-// Replacement of @ symbol with _ as @ isn't really valid for linux usernames
-// https://stackoverflow.com/a/32496876
-static void correct_username(char *str) {
-    char *ix = str;
-    //str = strlwr(str);
-    while(ix != NULL){
-      if(*ix == '@')
-        *ix = '_';
-      else
-        *ix = tolower(*ix);
-      ix++;
-    }
-}
 
 
 /* basic CAS module logic */
