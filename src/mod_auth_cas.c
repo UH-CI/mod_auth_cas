@@ -2154,6 +2154,23 @@ static void set_http_headers(request_rec *r, cas_cfg *c, cas_dir_cfg *d, cas_sam
 	}
 }
 
+
+// DLS code to lower case the inbound user name as linux is case sensitive
+// Replacement of @ symbol with _ as @ isn't really valid for linux usernames
+// https://stackoverflow.com/a/32496876
+static void correct_username(char *str) {
+    char *ix = str;
+    //str = strlwr(str);
+    while(ix != NULL){
+      if(*ix == '@')
+        *ix = '_';
+      else
+        *ix = tolowe(*ix);
+      ix++;
+    }
+}
+
+
 /* basic CAS module logic */
 int cas_authenticate(request_rec *r)
 {
@@ -2198,6 +2215,7 @@ int cas_authenticate(request_rec *r)
 	// prevent infinite redirect loops by allowing subsequent authentication responses to pass through, leaving the ticket parameter intact
 	if(c->CASPreserveTicket && (ticket != NULL) && (cookieString != NULL) && ap_is_initial_req(r) && isValidCASCookie(r, c, cookieString, &remoteUser, &attrs) && (remoteUser != NULL)) {
 		cas_set_attributes(r, attrs);
+    correct_username(remoteUser);
 		r->user = remoteUser;
 		set_http_headers(r, c, d, attrs);
 		if (c->CASDebug)
@@ -2235,6 +2253,7 @@ int cas_authenticate(request_rec *r)
 				return HTTP_INTERNAL_SERVER_ERROR;
 
 			cookieString = createCASCookie(r, remoteUser, attrs, ticket);
+      correct_username(remoteUser);
 
 			/* if there was an error writing the cookie info to the file system */
 			if(cookieString == NULL)
@@ -2314,6 +2333,7 @@ int cas_authenticate(request_rec *r)
 		cas_set_attributes(r, attrs);
 
 		if(remoteUser) {
+      correct_username(remoteUser);      
 			r->user = remoteUser;
 			set_http_headers(r, c, d, attrs);
 			return OK;
