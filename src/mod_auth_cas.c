@@ -2165,7 +2165,7 @@ static void correct_username(char *str) {
       if(*ix == '@')
         *ix = '_';
       else
-        *ix = tolowe(*ix);
+        *ix = tolower(*ix);
       ix++;
     }
 }
